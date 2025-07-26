@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { ChevronLeft, Settings, Users, BarChart3, CheckSquare, Calendar, Clock, AlertTriangle, TrendingUp } from 'lucide-react';
+import { ChevronLeft, Settings, Users, BarChart3, CheckSquare, Calendar, Clock, AlertTriangle, TrendingUp, Edit3, Plus, Trash2, Eye, Shield } from 'lucide-react';
 
 // Initialize Supabase client
-const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
-const supabaseKey = process.env.REACT_APP_SUPABASE_ANON_KEY;
+const supabaseUrl = process.env.REACT_APP_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.REACT_APP_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Official Chili's Brand Colors
@@ -31,8 +31,8 @@ const chiliheadColors = {
   accountability: colors.chiliNavy
 };
 
-// Task Data
-const taskData = {
+// Task Data - YOUR CUSTOMIZED LISTS
+const defaultTaskData = {
   daily: [
     'Walk the line during busy periods',
     'Review yesterday\'s sales vs goal',
@@ -94,7 +94,7 @@ const taskData = {
   ]
 };
 
-// Michigan DMA Areas
+// Michigan DMA Areas - YOUR AREAS
 const michiganAreas = [
   'Woods Area',
   'Peters Area',
@@ -112,6 +112,7 @@ const ChiliHeadTracker = () => {
   
   // User profile state
   const [profile, setProfile] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   
   // App state
   const [currentView, setCurrentView] = useState('home');
@@ -119,8 +120,16 @@ const ChiliHeadTracker = () => {
   const [language, setLanguage] = useState('en');
   
   // Data state
+  const [taskData, setTaskData] = useState(defaultTaskData);
   const [taskCompletions, setTaskCompletions] = useState({});
   const [delegations, setDelegations] = useState([]);
+  const [allUsers, setAllUsers] = useState([]);
+  const [allCompletions, setAllCompletions] = useState([]);
+  
+  // Admin state
+  const [editingTasks, setEditingTasks] = useState(false);
+  const [editingFrequency, setEditingFrequency] = useState('daily');
+  const [newTaskText, setNewTaskText] = useState('');
   
   // Form states
   const [authForm, setAuthForm] = useState({
@@ -128,7 +137,8 @@ const ChiliHeadTracker = () => {
     password: '',
     gmName: '',
     area: '',
-    restaurantName: ''
+    restaurantName: '',
+    role: 'gm'
   });
   
   const [delegationForm, setDelegationForm] = useState({
@@ -171,6 +181,7 @@ const ChiliHeadTracker = () => {
         setProfile(null);
         setTaskCompletions({});
         setDelegations([]);
+        setIsAdmin(false);
       }
     });
 
@@ -191,17 +202,21 @@ const ChiliHeadTracker = () => {
         return;
       }
 
+      let profileData = data;
+      
       if (!data) {
-        // Create profile if it doesn't exist
+        // Create profile - auto-assign admin role to johnolenski@gmail.com
+        const role = currentUser.email === 'johnolenski@gmail.com' ? 'admin' : 'gm';
         const { data: newProfile, error: insertError } = await supabase
           .from('profiles')
           .insert([{
             id: currentUser.id,
             email: currentUser.email,
-            gm_name: currentUser.user_metadata?.gm_name || '',
-            area: currentUser.user_metadata?.area || '',
-            restaurant_name: currentUser.user_metadata?.restaurant_name || '',
-            role: 'gm'
+            gm_name: currentUser.user_metadata?.gm_name || (currentUser.email === 'johnolenski@gmail.com' ? 'John Olenski' : ''),
+            area: currentUser.user_metadata?.area || (currentUser.email === 'johnolenski@gmail.com' ? 'All Areas' : ''),
+            restaurant_name: currentUser.user_metadata?.restaurant_name || (currentUser.email === 'johnolenski@gmail.com' ? 'Michigan DMA' : ''),
+            role: role,
+            can_view_all: currentUser.email === 'johnolenski@gmail.com'
           }])
           .select()
           .single();
@@ -210,12 +225,48 @@ const ChiliHeadTracker = () => {
           console.error('Error creating profile:', insertError);
           return;
         }
-        setProfile(newProfile);
-      } else {
-        setProfile(data);
+        profileData = newProfile;
+      }
+
+      setProfile(profileData);
+      setIsAdmin(profileData?.role === 'admin' || profileData?.can_view_all);
+      
+      // Load admin data if admin
+      if (profileData?.role === 'admin' || profileData?.can_view_all) {
+        await loadAdminData();
       }
     } catch (error) {
       console.error('Error:', error);
+    }
+  };
+
+  // Load admin data
+  const loadAdminData = async () => {
+    try {
+      // Load all users for admin dashboard
+      const { data: users, error: usersError } = await supabase
+        .from('profiles')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (!usersError) {
+        setAllUsers(users || []);
+      }
+
+      // Load all task completions for overview
+      const { data: completions, error: completionsError } = await supabase
+        .from('task_completions')
+        .select(`
+          *,
+          profiles!inner(gm_name, area, restaurant_name)
+        `)
+        .order('completion_date', { ascending: false });
+
+      if (!completionsError) {
+        setAllCompletions(completions || []);
+      }
+    } catch (error) {
+      console.error('Error loading admin data:', error);
     }
   };
 
@@ -268,13 +319,14 @@ const ChiliHeadTracker = () => {
           data: {
             gm_name: authForm.gmName,
             area: authForm.area,
-            restaurant_name: authForm.restaurantName
+            restaurant_name: authForm.restaurantName,
+            role: authForm.role
           }
         }
       });
 
       if (error) throw error;
-      alert('🌶️ Check your email for confirmation link!');
+      alert('🌶️ Account created successfully! You can now sign in.');
     } catch (error) {
       alert('Error signing up: ' + error.message);
     }
@@ -332,6 +384,39 @@ const ChiliHeadTracker = () => {
       console.error('Error saving task completion:', error);
       alert('Error saving task completion. Please try again.');
     }
+  };
+
+  // Admin task management
+  const addTask = () => {
+    if (!newTaskText.trim()) return;
+    
+    const updatedTasks = {
+      ...taskData,
+      [editingFrequency]: [...taskData[editingFrequency], newTaskText.trim()]
+    };
+    
+    setTaskData(updatedTasks);
+    setNewTaskText('');
+    alert('✅ Task added successfully!');
+  };
+
+  const removeTask = (frequency, index) => {
+    const updatedTasks = {
+      ...taskData,
+      [frequency]: taskData[frequency].filter((_, i) => i !== index)
+    };
+    
+    setTaskData(updatedTasks);
+    alert('🗑️ Task removed successfully!');
+  };
+
+  const editTask = (frequency, index, newText) => {
+    const updatedTasks = {
+      ...taskData,
+      [frequency]: taskData[frequency].map((task, i) => i === index ? newText : task)
+    };
+    
+    setTaskData(updatedTasks);
   };
 
   // Delegation handlers
@@ -474,6 +559,20 @@ const ChiliHeadTracker = () => {
                 </div>
 
                 <div>
+                  <label className="block text-sm font-medium mb-1" style={{ color: colors.chiliNavy }}>Role</label>
+                  <select
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2"
+                    style={{ '--tw-ring-color': colors.chiliRed }}
+                    value={authForm.role}
+                    onChange={(e) => setAuthForm(prev => ({ ...prev, role: e.target.value }))}
+                  >
+                    <option value="gm">General Manager</option>
+                    <option value="gm(p)">GM/Managing Partner</option>
+                  </select>
+                </div>
+
+                <div>
                   <label className="block text-sm font-medium mb-1" style={{ color: colors.chiliNavy }}>Area</label>
                   <select
                     required
@@ -526,6 +625,164 @@ const ChiliHeadTracker = () => {
     );
   }
 
+  // Admin Dashboard
+  if (currentView === 'admin' && isAdmin) {
+    const todayCompletions = allCompletions.filter(c => c.completion_date === new Date().toISOString().split('T')[0]);
+    const dailyCompletions = todayCompletions.filter(c => c.frequency === 'daily');
+    
+    return (
+      <div className="min-h-screen" style={{ backgroundColor: colors.chiliCream }}>
+        {/* Header */}
+        <div className="bg-white shadow-sm p-4 flex items-center justify-between">
+          <div className="flex items-center">
+            <button onClick={() => setCurrentView('home')} className="mr-4">
+              <ChevronLeft size={24} style={{ color: colors.chiliNavy }} />
+            </button>
+            <div>
+              <h1 className="text-xl font-bold" style={{ color: colors.chiliNavy }}>
+                🛡️ Master Admin Dashboard
+              </h1>
+              <p className="text-sm" style={{ color: colors.chiliBrown }}>
+                Michigan DMA Overview • {allUsers.length} Total GMs
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => setEditingTasks(!editingTasks)}
+            className="px-4 py-2 rounded-md text-white font-medium hover:opacity-90 flex items-center"
+            style={{ backgroundColor: colors.chiliRed }}
+          >
+            <Edit3 size={16} className="mr-2" />
+            {editingTasks ? 'Exit Edit Mode' : 'Edit Task Lists'}
+          </button>
+        </div>
+
+        {/* Task List Editor */}
+        {editingTasks && (
+          <div className="m-4">
+            <div className="bg-white rounded-lg p-6 shadow-md">
+              <h2 className="text-lg font-bold mb-4" style={{ color: colors.chiliNavy }}>
+                📝 Edit Task Lists
+              </h2>
+              
+              {/* Frequency Selector */}
+              <div className="mb-4">
+                <div className="flex flex-wrap gap-2">
+                  {Object.keys(taskData).map(freq => (
+                    <button
+                      key={freq}
+                      onClick={() => setEditingFrequency(freq)}
+                      className={`px-4 py-2 rounded-md font-medium ${
+                        editingFrequency === freq 
+                          ? 'text-white' 
+                          : 'bg-white text-gray-700 border border-gray-300'
+                      }`}
+                      style={editingFrequency === freq ? { backgroundColor: colors.chiliRed } : {}}
+                    >
+                      {freq.charAt(0).toUpperCase() + freq.slice(1)} ({taskData[freq].length})
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Add New Task */}
+              <div className="mb-4 flex gap-2">
+                <input
+                  type="text"
+                  placeholder={`Add new ${editingFrequency} task...`}
+                  value={newTaskText}
+                  onChange={(e) => setNewTaskText(e.target.value)}
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2"
+                  style={{ '--tw-ring-color': colors.chiliRed }}
+                />
+                <button
+                  onClick={addTask}
+                  className="px-4 py-2 rounded-md text-white font-medium hover:opacity-90"
+                  style={{ backgroundColor: colors.chiliGreen }}
+                >
+                  <Plus size={16} />
+                </button>
+              </div>
+
+              {/* Task List */}
+              <div className="space-y-2">
+                {taskData[editingFrequency].map((task, index) => (
+                  <div key={index} className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
+                    <span className="flex-1 text-sm">{task}</span>
+                    <button
+                      onClick={() => removeTask(editingFrequency, index)}
+                      className="p-1 text-red-600 hover:bg-red-100 rounded"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* GM Overview */}
+        <div className="m-4">
+          <div className="bg-white rounded-lg p-6 shadow-md">
+            <h2 className="text-lg font-bold mb-4" style={{ color: colors.chiliNavy }}>
+              👥 GM Performance Overview
+            </h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <div className="text-center">
+                <p className="text-2xl font-bold" style={{ color: colors.chiliGreen }}>{allUsers.length}</p>
+                <p className="text-sm" style={{ color: colors.chiliBrown }}>Total GMs</p>
+              </div>
+              <div className="text-center">
+                <p className="text-2xl font-bold" style={{ color: colors.chiliYellow }}>
+                  {allUsers.filter(u => u.role === 'gm(p)').length}
+                </p>
+                <p className="text-sm" style={{ color: colors.chiliBrown }}>GM/Partners</p>
+              </div>
+              <div className="text-center">
+                <p className="text-2xl font-bold" style={{ color: colors.chiliRed }}>
+                  {dailyCompletions.length}
+                </p>
+                <p className="text-sm" style={{ color: colors.chiliBrown }}>Active Today</p>
+              </div>
+            </div>
+
+            {/* GM List */}
+            <div className="space-y-3">
+              {allUsers.map(gmUser => {
+                const gmDailyCompletion = dailyCompletions.filter(c => c.user_id === gmUser.id);
+                const completionRate = gmDailyCompletion.length > 0 ? 
+                  Math.round((gmDailyCompletion.filter(c => c.completed).length / taskData.daily.length) * 100) : 0;
+                
+                return (
+                  <div key={gmUser.id} className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+                    <div>
+                      <h3 className="font-medium" style={{ color: colors.chiliNavy }}>
+                        {gmUser.gm_name}
+                        {gmUser.role === 'admin' && ' 🛡️'}
+                        {gmUser.role === 'gm(p)' && ' ⭐'}
+                      </h3>
+                      <p className="text-sm" style={{ color: colors.chiliBrown }}>
+                        {gmUser.area} • {gmUser.restaurant_name}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-lg font-bold" style={{ color: completionRate > 70 ? colors.chiliGreen : colors.chiliRed }}>
+                        {completionRate}%
+                      </p>
+                      <p className="text-sm" style={{ color: colors.chiliBrown }}>Today</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // Home Screen
   if (currentView === 'home') {
     const dailyStats = getCompletionStats('daily');
@@ -538,8 +795,14 @@ const ChiliHeadTracker = () => {
         <div className="text-white p-6" style={{ background: `linear-gradient(135deg, ${colors.chiliRed}, ${colors.chiliRedAlt}, ${colors.chiliYellow})` }}>
           <div className="flex justify-between items-start mb-4">
             <div>
-              <h1 className="text-2xl font-bold mb-1">🌶️ My ChiliHead Commitment Tracker</h1>
-              <p className="text-yellow-100">Welcome back, {profile?.gm_name || 'GM'}!</p>
+              <h1 className="text-2xl font-bold mb-1">
+                🌶️ My ChiliHead Commitment Tracker
+                {isAdmin && ' 🛡️'}
+              </h1>
+              <p className="text-yellow-100">
+                Welcome back, {profile?.gm_name || 'GM'}!
+                {isAdmin && ' (Master Admin)'}
+              </p>
             </div>
             <button
               onClick={handleSignOut}
@@ -626,6 +889,26 @@ const ChiliHeadTracker = () => {
               </div>
             </div>
           </button>
+
+          {/* Admin Panel Access */}
+          {isAdmin && (
+            <button
+              onClick={() => setCurrentView('admin')}
+              className="w-full bg-white rounded-lg p-6 text-left shadow-md hover:shadow-lg transition-shadow border-2"
+              style={{ borderColor: colors.chiliYellow }}
+            >
+              <div className="flex items-center">
+                <Shield size={32} style={{ color: colors.chiliYellow }} className="mr-4" />
+                <div>
+                  <h3 className="text-xl font-bold" style={{ color: colors.chiliNavy }}>Master Admin Panel 🛡️</h3>
+                  <p style={{ color: colors.chiliBrown }}>Edit Tasks • View All GMs • Michigan DMA Overview</p>
+                  <p className="text-sm font-medium" style={{ color: colors.chiliYellow }}>
+                    {allUsers.length} Total GMs
+                  </p>
+                </div>
+              </div>
+            </button>
+          )}
         </div>
 
         {/* Language Selector */}
@@ -651,7 +934,7 @@ const ChiliHeadTracker = () => {
     );
   }
 
-  // Tasks View
+  // Tasks View (same as before, but using dynamic taskData)
   if (currentView === 'tasks') {
     const tasks = taskData[selectedFrequency] || [];
     const today = new Date().toISOString().split('T')[0];
@@ -781,7 +1064,7 @@ const ChiliHeadTracker = () => {
     );
   }
 
-  // Dashboard View
+  // Dashboard View (keeping your existing dashboard)
   if (currentView === 'dashboard') {
     const dailyStats = getCompletionStats('daily');
     const weeklyStats = getCompletionStats('weekly');
@@ -976,7 +1259,7 @@ ${delegations.map(d => `• ${d.task_description} (Assigned to: ${d.assigned_to}
     );
   }
 
-  // Delegation Hub
+  // Delegation Hub (keeping your existing delegation hub)
   if (currentView === 'delegation') {
     const activeDelegationsCount = getActiveDelegations().length;
     const dueSoonCount = delegations.filter(d => {
@@ -1119,7 +1402,7 @@ ${delegations.map(d => `• ${d.task_description} (Assigned to: ${d.assigned_to}
     );
   }
 
-  // New Delegation Form
+  // New Delegation Form (keeping your existing form)
   if (currentView === 'newDelegation') {
     const completedSteps = Object.values(delegationForm.chiliheadProgress).filter(step => step.completed).length;
 
