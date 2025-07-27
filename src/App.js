@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { ChevronLeft, Settings, Users, BarChart3, CheckSquare, Edit3, Plus, Trash2, Shield } from 'lucide-react';
+import { ChevronLeft, Settings, Users, BarChart3, CheckSquare, Edit3, Plus, Trash2, Shield, Calendar, Clock, AlertTriangle, Target, TrendingUp, Award } from 'lucide-react';
 
 const supabaseUrl = process.env.REACT_APP_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.REACT_APP_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -47,8 +47,8 @@ const defaultTaskData = {
     'Complete weekly P&L review',
     'Review and update Forecast in Hotscedules',
     'Post TM Schedule Monday',
-    'Make sure Next weeks Scedule is started and on track by Monday PM',
-    'Update Gust Count in Forecast for Menulink',
+    'Make sure Next weeks Schedule is started and on track by Monday PM',
+    'Update Guest Count in Forecast for Menulink',
     'Conduct team member coaching sessions',
     'Review and update schedules',
     'Complete food safety audit',
@@ -68,7 +68,7 @@ const defaultTaskData = {
   ],
   monthly: [
     'Complete monthly business review',
-    'prepare and send you D.O. their powerpoint recap',
+    'Prepare and send your D.O. their powerpoint recap',
     'Conduct Monthly Check-ins',
     'Review and update AORs',
     'Complete comprehensive audit',
@@ -313,8 +313,7 @@ const ChiliHeadTracker = () => {
     }
   };
 
-  const handleSignUp = async (e) => {
-    e.preventDefault();
+  const handleSignUp = async () => {
     try {
       const { data, error } = await supabase.auth.signUp({
         email: authForm.email,
@@ -336,8 +335,7 @@ const ChiliHeadTracker = () => {
     }
   };
 
-  const handleSignIn = async (e) => {
-    e.preventDefault();
+  const handleSignIn = async () => {
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email: authForm.email,
@@ -505,7 +503,7 @@ const ChiliHeadTracker = () => {
             <p className="text-lg" style={{ color: colors.chiliBrown }}>Michigan DMA GM Tracker</p>
           </div>
 
-          <form onSubmit={isSignUp ? handleSignUp : handleSignIn} className="space-y-4">
+          <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium mb-1" style={{ color: colors.chiliNavy }}>Email</label>
               <input
@@ -585,13 +583,13 @@ const ChiliHeadTracker = () => {
             )}
 
             <button
-              type="submit"
+              onClick={isSignUp ? handleSignUp : handleSignIn}
               className="w-full py-3 px-4 rounded-md text-white font-semibold text-lg hover:opacity-90 transition-opacity"
               style={{ backgroundColor: colors.chiliRed }}
             >
               🌶️ {isSignUp ? 'Join Michigan DMA ChiliHeads' : 'Sign In'}
             </button>
-          </form>
+          </div>
 
           <div className="mt-6 text-center">
             <button
@@ -607,7 +605,464 @@ const ChiliHeadTracker = () => {
     );
   }
 
-  return <div>ChiliHead App Loading...</div>;
+  // Main App Interface - THIS IS WHAT WAS MISSING!
+  const renderMainInterface = () => {
+    const fiscalInfo = getFiscalInfo();
+    
+    return (
+      <div className="min-h-screen" style={{ backgroundColor: colors.chiliCream }}>
+        {/* Header */}
+        <header className="shadow-lg" style={{ backgroundColor: colors.chiliNavy }}>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center py-4">
+              <div className="flex items-center space-x-4">
+                <h1 className="text-2xl font-bold text-white">🌶️ ChiliHead Tracker</h1>
+                <div className="text-sm text-white opacity-75">
+                  {profile?.restaurant_name} | {profile?.area}
+                </div>
+              </div>
+              
+              <div className="flex items-center space-x-4">
+                <div className="text-sm text-white text-right">
+                  <div>Period {fiscalInfo.period} | Week {fiscalInfo.week}/{fiscalInfo.totalWeeks}</div>
+                  <div className="opacity-75">{fiscalInfo.weekStart} - {fiscalInfo.weekEnd}</div>
+                </div>
+                <div className="text-white font-medium">{profile?.gm_name}</div>
+                <button
+                  onClick={handleSignOut}
+                  className="text-white hover:opacity-75 transition-opacity"
+                >
+                  Sign Out
+                </button>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {/* Navigation */}
+        <nav className="shadow-sm" style={{ backgroundColor: colors.chiliRed }}>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex space-x-8">
+              {[
+                { id: 'home', label: 'Dashboard', icon: BarChart3 },
+                { id: 'tasks', label: 'Tasks', icon: CheckSquare },
+                { id: 'delegation', label: 'Delegations', icon: Users },
+                ...(isAdmin || isDO ? [{ id: 'analytics', label: 'Analytics', icon: TrendingUp }] : []),
+                ...(isAdmin ? [{ id: 'admin', label: 'Admin', icon: Shield }] : [])
+              ].map(({ id, label, icon: Icon }) => (
+                <button
+                  key={id}
+                  onClick={() => setCurrentView(id)}
+                  className={`flex items-center space-x-2 py-4 px-2 text-white font-medium border-b-2 transition-colors ${
+                    currentView === id ? 'border-white' : 'border-transparent hover:border-white/50'
+                  }`}
+                >
+                  <Icon size={18} />
+                  <span>{label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </nav>
+
+        {/* Main Content */}
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {currentView === 'home' && renderDashboard()}
+          {currentView === 'tasks' && renderTasksView()}
+          {currentView === 'delegation' && renderDelegationView()}
+          {currentView === 'analytics' && (isAdmin || isDO) && renderAnalyticsView()}
+          {currentView === 'admin' && isAdmin && renderAdminView()}
+        </main>
+      </div>
+    );
+  };
+
+  const renderDashboard = () => {
+    const dailyStats = getCompletionStats('daily');
+    const weeklyStats = getCompletionStats('weekly');
+    const activeDelegations = getActiveDelegations();
+    const overdueDelegations = getOverdueDelegations();
+
+    return (
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* Daily Tasks */}
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold" style={{ color: colors.chiliNavy }}>Daily Tasks</h3>
+              <CheckSquare style={{ color: colors.chiliGreen }} size={24} />
+            </div>
+            <div className="text-3xl font-bold mb-2" style={{ color: colors.chiliRed }}>
+              {dailyStats.completed}/{dailyStats.total}
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <div
+                className="h-2 rounded-full"
+                style={{
+                  backgroundColor: colors.chiliGreen,
+                  width: `${dailyStats.total > 0 ? (dailyStats.completed / dailyStats.total) * 100 : 0}%`
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Weekly Tasks */}
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold" style={{ color: colors.chiliNavy }}>Weekly Tasks</h3>
+              <Calendar style={{ color: colors.chiliYellow }} size={24} />
+            </div>
+            <div className="text-3xl font-bold mb-2" style={{ color: colors.chiliRed }}>
+              {weeklyStats.completed}/{weeklyStats.total}
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <div
+                className="h-2 rounded-full"
+                style={{
+                  backgroundColor: colors.chiliYellow,
+                  width: `${weeklyStats.total > 0 ? (weeklyStats.completed / weeklyStats.total) * 100 : 0}%`
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Active Delegations */}
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold" style={{ color: colors.chiliNavy }}>Active Delegations</h3>
+              <Users style={{ color: colors.chiliNavy }} size={24} />
+            </div>
+            <div className="text-3xl font-bold mb-2" style={{ color: colors.chiliRed }}>
+              {activeDelegations.length}
+            </div>
+            <div className="text-sm" style={{ color: colors.chiliGray }}>
+              Currently tracking
+            </div>
+          </div>
+
+          {/* Overdue Items */}
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold" style={{ color: colors.chiliNavy }}>Overdue</h3>
+              <AlertTriangle style={{ color: colors.chiliRed }} size={24} />
+            </div>
+            <div className="text-3xl font-bold mb-2" style={{ color: colors.chiliRed }}>
+              {overdueDelegations.length}
+            </div>
+            <div className="text-sm" style={{ color: colors.chiliGray }}>
+              Need attention
+            </div>
+          </div>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="bg-white rounded-lg shadow-lg p-6">
+          <h3 className="text-xl font-semibold mb-4" style={{ color: colors.chiliNavy }}>Quick Actions</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <button
+              onClick={() => setCurrentView('tasks')}
+              className="flex items-center space-x-3 p-4 rounded-lg border-2 hover:shadow-md transition-shadow"
+              style={{ borderColor: colors.chiliGreen }}
+            >
+              <CheckSquare style={{ color: colors.chiliGreen }} size={24} />
+              <div className="text-left">
+                <div className="font-semibold" style={{ color: colors.chiliNavy }}>Complete Tasks</div>
+                <div className="text-sm" style={{ color: colors.chiliGray }}>Mark today's tasks complete</div>
+              </div>
+            </button>
+
+            <button
+              onClick={() => setCurrentView('delegation')}
+              className="flex items-center space-x-3 p-4 rounded-lg border-2 hover:shadow-md transition-shadow"
+              style={{ borderColor: colors.chiliYellow }}
+            >
+              <Plus style={{ color: colors.chiliYellow }} size={24} />
+              <div className="text-left">
+                <div className="font-semibold" style={{ color: colors.chiliNavy }}>New Delegation</div>
+                <div className="text-sm" style={{ color: colors.chiliGray }}>Delegate a new task</div>
+              </div>
+            </button>
+
+            <button
+              onClick={() => setCurrentView('delegation')}
+              className="flex items-center space-x-3 p-4 rounded-lg border-2 hover:shadow-md transition-shadow"
+              style={{ borderColor: colors.chiliNavy }}
+            >
+              <Users style={{ color: colors.chiliNavy }} size={24} />
+              <div className="text-left">
+                <div className="font-semibold" style={{ color: colors.chiliNavy }}>Review Delegations</div>
+                <div className="text-sm" style={{ color: colors.chiliGray }}>Check progress on delegations</div>
+              </div>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderTasksView = () => {
+    const today = new Date().toISOString().split('T')[0];
+    const currentTasks = taskData[selectedFrequency] || [];
+    const key = `${selectedFrequency}_${today}`;
+    const completions = taskCompletions[key] || {};
+
+    return (
+      <div className="space-y-6">
+        {/* Frequency Selector */}
+        <div className="bg-white rounded-lg shadow-lg p-6">
+          <div className="flex flex-wrap gap-2">
+            {Object.keys(defaultTaskData).map(frequency => {
+              const stats = getCompletionStats(frequency);
+              return (
+                <button
+                  key={frequency}
+                  onClick={() => setSelectedFrequency(frequency)}
+                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                    selectedFrequency === frequency
+                      ? 'text-white'
+                      : 'text-gray-600 hover:bg-gray-100'
+                  }`}
+                  style={{
+                    backgroundColor: selectedFrequency === frequency ? colors.chiliRed : 'transparent'
+                  }}
+                >
+                  {frequency.charAt(0).toUpperCase() + frequency.slice(1)} ({stats.completed}/{stats.total})
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Task List */}
+        <div className="bg-white rounded-lg shadow-lg p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-xl font-semibold" style={{ color: colors.chiliNavy }}>
+              {selectedFrequency.charAt(0).toUpperCase() + selectedFrequency.slice(1)} Tasks
+            </h3>
+            {isAdmin && (
+              <button
+                onClick={() => setEditingTasks(!editingTasks)}
+                className="flex items-center space-x-2 px-4 py-2 rounded-lg text-white"
+                style={{ backgroundColor: colors.chiliYellow }}
+              >
+                <Edit3 size={18} />
+                <span>{editingTasks ? 'Done Editing' : 'Edit Tasks'}</span>
+              </button>
+            )}
+          </div>
+
+          <div className="space-y-3">
+            {currentTasks.map((task, index) => (
+              <div
+                key={index}
+                className={`flex items-center space-x-3 p-4 rounded-lg border-2 transition-colors ${
+                  completions[`task_${index}`]
+                    ? 'bg-green-50 border-green-200'
+                    : 'bg-gray-50 border-gray-200'
+                }`}
+              >
+                <button
+                  onClick={() => toggleTask(index)}
+                  className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-colors ${
+                    completions[`task_${index}`]
+                      ? 'bg-green-500 border-green-500 text-white'
+                      : 'border-gray-300 hover:border-green-500'
+                  }`}
+                >
+                  {completions[`task_${index}`] && '✓'}
+                </button>
+                
+                <span
+                  className={`flex-1 ${
+                    completions[`task_${index}`] ? 'line-through text-gray-500' : ''
+                  }`}
+                >
+                  {task}
+                </span>
+
+                {editingTasks && isAdmin && (
+                  <button
+                    onClick={() => removeTask(selectedFrequency, index)}
+                    className="text-red-500 hover:text-red-700"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {editingTasks && isAdmin && (
+            <div className="mt-6 pt-6 border-t">
+              <div className="flex space-x-2">
+                <input
+                  type="text"
+                  placeholder="Add new task..."
+                  value={newTaskText}
+                  onChange={(e) => setNewTaskText(e.target.value)}
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
+                  onKeyPress={(e) => e.key === 'Enter' && addTask()}
+                />
+                <button
+                  onClick={addTask}
+                  className="px-4 py-2 text-white rounded-lg"
+                  style={{ backgroundColor: colors.chiliGreen }}
+                >
+                  <Plus size={18} />
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const renderDelegationView = () => {
+    return (
+      <div className="space-y-6">
+        {/* Create New Delegation */}
+        <div className="bg-white rounded-lg shadow-lg p-6">
+          <h3 className="text-xl font-semibold mb-4" style={{ color: colors.chiliNavy }}>Create New Delegation</h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <div>
+              <label className="block text-sm font-medium mb-1" style={{ color: colors.chiliNavy }}>Task Description</label>
+              <textarea
+                value={delegationForm.taskDescription}
+                onChange={(e) => setDelegationForm(prev => ({ ...prev, taskDescription: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
+                rows={3}
+                placeholder="Describe the task to be delegated..."
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1" style={{ color: colors.chiliNavy }}>Assigned To</label>
+              <input
+                type="text"
+                value={delegationForm.assignedTo}
+                onChange={(e) => setDelegationForm(prev => ({ ...prev, assignedTo: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
+                placeholder="Team member name..."
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1" style={{ color: colors.chiliNavy }}>Due Date</label>
+              <input
+                type="date"
+                value={delegationForm.dueDate}
+                onChange={(e) => setDelegationForm(prev => ({ ...prev, dueDate: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1" style={{ color: colors.chiliNavy }}>Priority</label>
+              <select
+                value={delegationForm.priority}
+                onChange={(e) => setDelegationForm(prev => ({ ...prev, priority: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
+              >
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+              </select>
+            </div>
+          </div>
+
+          <button
+            onClick={createDelegation}
+            className="px-6 py-3 text-white font-semibold rounded-lg"
+            style={{ backgroundColor: colors.chiliRed }}
+          >
+            🌶️ Create Delegation
+          </button>
+        </div>
+
+        {/* Existing Delegations */}
+        <div className="bg-white rounded-lg shadow-lg p-6">
+          <h3 className="text-xl font-semibold mb-4" style={{ color: colors.chiliNavy }}>Your Delegations</h3>
+          
+          {delegations.length === 0 ? (
+            <div className="text-center py-8" style={{ color: colors.chiliGray }}>
+              <Users size={48} className="mx-auto mb-4" />
+              <p>No delegations created yet. Create your first delegation above!</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {delegations.map(delegation => (
+                <div key={delegation.id} className="border rounded-lg p-4">
+                  <div className="flex justify-between items-start mb-2">
+                    <h4 className="font-semibold" style={{ color: colors.chiliNavy }}>
+                      {delegation.task_description}
+                    </h4>
+                    <span
+                      className={`px-2 py-1 rounded text-xs font-medium ${
+                        delegation.priority === 'high'
+                          ? 'bg-red-100 text-red-800'
+                          : delegation.priority === 'medium'
+                          ? 'bg-yellow-100 text-yellow-800'
+                          : 'bg-green-100 text-green-800'
+                      }`}
+                    >
+                      {delegation.priority.toUpperCase()}
+                    </span>
+                  </div>
+                  <div className="text-sm mb-2" style={{ color: colors.chiliGray }}>
+                    Assigned to: <strong>{delegation.assigned_to}</strong>
+                    {delegation.due_date && (
+                      <span className="ml-4">
+                        Due: <strong>{new Date(delegation.due_date).toLocaleDateString()}</strong>
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-sm" style={{ color: colors.chiliGray }}>
+                    Status: <strong className="capitalize">{delegation.status}</strong>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const renderAnalyticsView = () => {
+    return (
+      <div className="space-y-6">
+        <div className="bg-white rounded-lg shadow-lg p-6">
+          <h3 className="text-xl font-semibold mb-4" style={{ color: colors.chiliNavy }}>
+            {isDO ? 'Area Analytics' : 'System Analytics'}
+          </h3>
+          <div className="text-center py-8" style={{ color: colors.chiliGray }}>
+            <BarChart3 size={48} className="mx-auto mb-4" />
+            <p>Analytics dashboard coming soon...</p>
+            <p className="mt-2">Track team performance and completion rates</p>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderAdminView = () => {
+    return (
+      <div className="space-y-6">
+        <div className="bg-white rounded-lg shadow-lg p-6">
+          <h3 className="text-xl font-semibold mb-4" style={{ color: colors.chiliNavy }}>Admin Dashboard</h3>
+          <div className="text-center py-8" style={{ color: colors.chiliGray }}>
+            <Shield size={48} className="mx-auto mb-4" />
+            <p>Admin controls coming soon...</p>
+            <p className="mt-2">Manage users, tasks, and system settings</p>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  return renderMainInterface();
 };
 
 export default ChiliHeadTracker;
