@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { ChevronLeft, Settings, Users, BarChart3, CheckSquare, Edit3, Plus, Trash2, Shield } from 'lucide-react';
-
 const supabaseUrl = process.env.REACT_APP_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.REACT_APP_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
-
 const colors = {
   chiliRed: 'rgb(237, 28, 36)',
   chiliRedAlt: 'rgb(232, 27, 35)',
@@ -19,7 +17,6 @@ const colors = {
   chiliBrown: 'rgb(60, 58, 53)',
   chiliGray: 'rgb(161, 159, 154)'
 };
-
 const chiliheadColors = {
   senseOfBelonging: 'rgb(255, 235, 59)',
   clearDirection: 'rgb(255, 152, 0)',
@@ -27,7 +24,6 @@ const chiliheadColors = {
   support: 'rgb(244, 67, 54)',
   accountability: 'rgb(63, 81, 181)'
 };
-
 const defaultTaskData = {
   daily: [
     'Walk the line during busy periods',
@@ -89,7 +85,6 @@ const defaultTaskData = {
     'Set next quarter\'s objectives'
   ]
 };
-
 const michiganAreas = [
   'Woods Area',
   'Peters Area',
@@ -98,7 +93,6 @@ const michiganAreas = [
   'Another Area',
   'Other Area'
 ];
-
 const ChiliHeadTracker = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -142,7 +136,6 @@ const ChiliHeadTracker = () => {
       accountability: { completed: false, notes: '', expanded: false }
     }
   });
-
   useEffect(() => {
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -154,7 +147,6 @@ const ChiliHeadTracker = () => {
       setLoading(false);
     };
     checkUser();
-
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
         setUser(session.user);
@@ -169,10 +161,8 @@ const ChiliHeadTracker = () => {
         setIsDO(false);
       }
     });
-
     return () => subscription.unsubscribe();
   }, []);
-
   const loadUserProfile = async (currentUser) => {
     try {
       const { data, error } = await supabase
@@ -180,12 +170,10 @@ const ChiliHeadTracker = () => {
         .select('*')
         .eq('id', currentUser.id)
         .single();
-
       if (error && error.code !== 'PGRST116') {
         console.error('Error loading profile:', error);
         return;
       }
-
       let profileData = data;
       
       if (!data) {
@@ -203,14 +191,12 @@ const ChiliHeadTracker = () => {
           }])
           .select()
           .single();
-
         if (insertError) {
           console.error('Error creating profile:', insertError);
           return;
         }
         profileData = newProfile;
       }
-
       setProfile(profileData);
       setIsAdmin(profileData?.role === 'admin' || profileData?.can_view_all);
       setIsDO(profileData?.role === 'do');
@@ -224,7 +210,6 @@ const ChiliHeadTracker = () => {
       console.error('Error:', error);
     }
   };
-
   const loadDOData = async (area) => {
     try {
       const { data: areaUsers, error: usersError } = await supabase
@@ -232,11 +217,9 @@ const ChiliHeadTracker = () => {
         .select('*')
         .eq('area', area)
         .order('created_at', { ascending: false });
-
       if (!usersError) {
         setAllUsers(areaUsers || []);
       }
-
       const areaUserIds = areaUsers?.map(u => u.id) || [];
       if (areaUserIds.length > 0) {
         const { data: completions, error: completionsError } = await supabase
@@ -244,7 +227,6 @@ const ChiliHeadTracker = () => {
           .select(`*`)
           .in('user_id', areaUserIds)
           .order('completion_date', { ascending: false });
-
         if (!completionsError) {
           setAllCompletions(completions || []);
         }
@@ -253,23 +235,19 @@ const ChiliHeadTracker = () => {
       console.error('Error loading DO data:', error);
     }
   };
-
   const loadAdminData = async () => {
     try {
       const { data: users, error: usersError } = await supabase
         .from('profiles')
         .select('*')
         .order('created_at', { ascending: false });
-
       if (!usersError) {
         setAllUsers(users || []);
       }
-
       const { data: completions, error: completionsError } = await supabase
         .from('task_completions')
         .select('*')
         .order('completion_date', { ascending: false });
-
       if (!completionsError) {
         setAllCompletions(completions || []);
       }
@@ -277,14 +255,12 @@ const ChiliHeadTracker = () => {
       console.error('Error loading admin data:', error);
     }
   };
-
   const loadUserData = async (currentUser) => {
     try {
       const { data: tasks, error: tasksError } = await supabase
         .from('task_completions')
         .select('*')
         .eq('user_id', currentUser.id);
-
       if (tasksError) {
         console.error('Error loading tasks:', tasksError);
       } else {
@@ -296,13 +272,11 @@ const ChiliHeadTracker = () => {
         });
         setTaskCompletions(formattedTasks);
       }
-
       const { data: delegationData, error: delegationsError } = await supabase
         .from('delegations')
         .select('*')
         .eq('user_id', currentUser.id)
         .order('created_at', { ascending: false });
-
       if (delegationsError) {
         console.error('Error loading delegations:', delegationsError);
       } else {
@@ -312,7 +286,6 @@ const ChiliHeadTracker = () => {
       console.error('Error loading user data:', error);
     }
   };
-
   const handleSignUp = async (e) => {
     e.preventDefault();
     try {
@@ -328,14 +301,12 @@ const ChiliHeadTracker = () => {
           }
         }
       });
-
       if (error) throw error;
       alert('🌶️ Account created successfully! You can now sign in.');
     } catch (error) {
       alert('Error signing up: ' + error.message);
     }
   };
-
   const handleSignIn = async (e) => {
     e.preventDefault();
     try {
@@ -343,24 +314,20 @@ const ChiliHeadTracker = () => {
         email: authForm.email,
         password: authForm.password
       });
-
       if (error) throw error;
     } catch (error) {
       alert('Error signing in: ' + error.message);
     }
   };
-
   const handleSignOut = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) console.error('Error signing out:', error);
   };
-
   const toggleTask = async (taskIndex) => {
     const today = new Date().toISOString().split('T')[0];
     const key = `${selectedFrequency}_${today}`;
     const taskKey = `task_${taskIndex}`;
     const isCompleted = !taskCompletions[key]?.[taskKey];
-
     setTaskCompletions(prev => ({
       ...prev,
       [key]: {
@@ -368,7 +335,6 @@ const ChiliHeadTracker = () => {
         [taskKey]: isCompleted
       }
     }));
-
     try {
       const { error } = await supabase
         .from('task_completions')
@@ -379,14 +345,12 @@ const ChiliHeadTracker = () => {
           completion_date: today,
           completed: isCompleted
         });
-
       if (error) throw error;
     } catch (error) {
       console.error('Error saving task completion:', error);
       alert('Error saving task completion. Please try again.');
     }
   };
-
   const addTask = () => {
     if (!newTaskText.trim()) return;
     
@@ -399,7 +363,6 @@ const ChiliHeadTracker = () => {
     setNewTaskText('');
     alert('✅ Task added successfully!');
   };
-
   const removeTask = (frequency, index) => {
     const updatedTasks = {
       ...taskData,
@@ -409,13 +372,11 @@ const ChiliHeadTracker = () => {
     setTaskData(updatedTasks);
     alert('🗑️ Task removed successfully!');
   };
-
   const createDelegation = async () => {
     if (!user || !delegationForm.taskDescription || !delegationForm.assignedTo) {
       alert('Please fill in required fields');
       return;
     }
-
     try {
       const { data, error } = await supabase
         .from('delegations')
@@ -431,9 +392,7 @@ const ChiliHeadTracker = () => {
         }])
         .select()
         .single();
-
       if (error) throw error;
-
       setDelegations(prev => [data, ...prev]);
       setDelegationForm({
         taskDescription: '',
@@ -457,7 +416,6 @@ const ChiliHeadTracker = () => {
       alert('Error creating delegation. Please try again.');
     }
   };
-
   const getCompletionStats = (frequency) => {
     const today = new Date().toISOString().split('T')[0];
     const key = `${frequency}_${today}`;
@@ -465,11 +423,9 @@ const ChiliHeadTracker = () => {
     const completed = Object.values(taskCompletions[key] || {}).filter(Boolean).length;
     return { completed, total: tasks.length };
   };
-
   const getActiveDelegations = () => {
     return delegations.filter(d => d.status === 'active' && !d.completed);
   };
-
   const getOverdueDelegations = () => {
     const today = new Date();
     return delegations.filter(d => 
@@ -479,7 +435,6 @@ const ChiliHeadTracker = () => {
       new Date(d.due_date) < today
     );
   };
-
   const getFiscalInfo = () => ({
     period: 1,
     week: 4,
@@ -487,7 +442,6 @@ const ChiliHeadTracker = () => {
     weekStart: '7/16/2025',
     weekEnd: '7/22/2025'
   });
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: `linear-gradient(135deg, ${colors.chiliRed}, ${colors.chiliRedAlt}, ${colors.chiliYellow})` }}>
@@ -495,7 +449,6 @@ const ChiliHeadTracker = () => {
       </div>
     );
   }
-
   if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4" style={{ background: `linear-gradient(135deg, ${colors.chiliRed}, ${colors.chiliRedAlt}, ${colors.chiliYellow})` }}>
@@ -504,7 +457,6 @@ const ChiliHeadTracker = () => {
             <h1 className="text-3xl font-bold mb-2" style={{ color: colors.chiliNavy }}>🌶️ ChiliHead</h1>
             <p className="text-lg" style={{ color: colors.chiliBrown }}>Michigan DMA GM Tracker</p>
           </div>
-
           <form onSubmit={isSignUp ? handleSignUp : handleSignIn} className="space-y-4">
             <div>
               <label className="block text-sm font-medium mb-1" style={{ color: colors.chiliNavy }}>Email</label>
@@ -516,7 +468,6 @@ const ChiliHeadTracker = () => {
                 onChange={(e) => setAuthForm(prev => ({ ...prev, email: e.target.value }))}
               />
             </div>
-
             <div>
               <label className="block text-sm font-medium mb-1" style={{ color: colors.chiliNavy }}>Password</label>
               <input
@@ -528,7 +479,6 @@ const ChiliHeadTracker = () => {
                 onChange={(e) => setAuthForm(prev => ({ ...prev, password: e.target.value }))}
               />
             </div>
-
             {isSignUp && (
               <>
                 <div>
@@ -541,7 +491,6 @@ const ChiliHeadTracker = () => {
                     onChange={(e) => setAuthForm(prev => ({ ...prev, gmName: e.target.value }))}
                   />
                 </div>
-
                 <div>
                   <label className="block text-sm font-medium mb-1" style={{ color: colors.chiliNavy }}>Role</label>
                   <select
@@ -555,7 +504,6 @@ const ChiliHeadTracker = () => {
                     <option value="do">Director of Operations</option>
                   </select>
                 </div>
-
                 <div>
                   <label className="block text-sm font-medium mb-1" style={{ color: colors.chiliNavy }}>Area</label>
                   <select
@@ -570,7 +518,6 @@ const ChiliHeadTracker = () => {
                     ))}
                   </select>
                 </div>
-
                 <div>
                   <label className="block text-sm font-medium mb-1" style={{ color: colors.chiliNavy }}>Restaurant Name/Number</label>
                   <input
@@ -583,7 +530,6 @@ const ChiliHeadTracker = () => {
                 </div>
               </>
             )}
-
             <button
               type="submit"
               className="w-full py-3 px-4 rounded-md text-white font-semibold text-lg hover:opacity-90 transition-opacity"
@@ -592,7 +538,6 @@ const ChiliHeadTracker = () => {
               🌶️ {isSignUp ? 'Join Michigan DMA ChiliHeads' : 'Sign In'}
             </button>
           </form>
-
           <div className="mt-6 text-center">
             <button
               onClick={() => setIsSignUp(!isSignUp)}
@@ -606,8 +551,33 @@ const ChiliHeadTracker = () => {
       </div>
     );
   }
-
-  return <div>ChiliHead App Loading...</div>;
+  return (
+    <div className="min-h-screen" style={{ backgroundColor: colors.chiliCream }}>
+      <header className="shadow-lg" style={{ backgroundColor: colors.chiliNavy }}>
+        <div className="max-w-7xl mx-auto px-4 py-4">
+          <div className="flex justify-between items-center">
+            <h1 className="text-2xl font-bold text-white">🌶️ ChiliHead Tracker</h1>
+            <div className="flex items-center space-x-4">
+              <span className="text-white">Welcome, {profile?.gm_name || user?.email}</span>
+              <button onClick={handleSignOut} className="text-white hover:opacity-75">
+                Sign Out
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+      <main className="max-w-7xl mx-auto px-4 py-8">
+        <div className="bg-white rounded-lg shadow-lg p-6">
+          <h2 className="text-xl font-semibold mb-4" style={{ color: colors.chiliNavy }}>
+            🌶️ Welcome to ChiliHead Tracker!
+          </h2>
+          <p>You're successfully logged in as <strong>{profile?.gm_name || user?.email}</strong></p>
+          <p className="mt-2">Restaurant: <strong>{profile?.restaurant_name}</strong></p>
+          <p className="mt-2">Area: <strong>{profile?.area}</strong></p>
+          <p className="mt-4 text-gray-600">Full interface coming soon...</p>
+        </div>
+      </main>
+    </div>
+  );
 };
-
 export default ChiliHeadTracker;
