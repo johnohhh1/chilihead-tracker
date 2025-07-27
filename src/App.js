@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from 'react';
+// Home Screen
+  if (currentView === 'home') {  // Load admin data
+  const loadAdminData = async () => {import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { ChevronLeft, Settings, Users, BarChart3, CheckSquare, Calendar, Clock, AlertTriangle, TrendingUp, Edit3, Plus, Trash2, Eye, Shield } from 'lucide-react';
 
@@ -22,13 +24,13 @@ const colors = {
   chiliGray: 'rgb(161, 159, 154)'
 };
 
-// ChiliHead 5-Pillar Colors
+// ChiliHead 5-Pillar Colors - CORRECT GRADIENT FLOW
 const chiliheadColors = {
-  senseOfBelonging: colors.chiliYellow,
-  clearDirection: colors.chiliYellowAlt,
-  preparation: colors.chiliRed,
-  support: colors.chiliRedAlt,
-  accountability: colors.chiliNavy
+  senseOfBelonging: 'rgb(255, 235, 59)',    // Bright Yellow
+  clearDirection: 'rgb(255, 152, 0)',       // Orange  
+  preparation: 'rgb(255, 87, 34)',          // Darker Orange/Red-Orange
+  support: 'rgb(244, 67, 54)',              // Red
+  accountability: 'rgb(63, 81, 181)'        // Blue
 };
 
 // Task Data - YOUR CUSTOMIZED LISTS
@@ -113,6 +115,7 @@ const ChiliHeadTracker = () => {
   // User profile state
   const [profile, setProfile] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isDO, setIsDO] = useState(false);
   
   // App state
   const [currentView, setCurrentView] = useState('home');
@@ -182,6 +185,7 @@ const ChiliHeadTracker = () => {
         setTaskCompletions({});
         setDelegations([]);
         setIsAdmin(false);
+        setIsDO(false);
       }
     });
 
@@ -230,18 +234,53 @@ const ChiliHeadTracker = () => {
 
       setProfile(profileData);
       setIsAdmin(profileData?.role === 'admin' || profileData?.can_view_all);
+      setIsDO(profileData?.role === 'do');
       
-      // Load admin data if admin
+      // Load admin data if admin, or area data if DO
       if (profileData?.role === 'admin' || profileData?.can_view_all) {
         await loadAdminData();
+      } else if (profileData?.role === 'do') {
+        await loadDOData(profileData.area);
       }
     } catch (error) {
       console.error('Error:', error);
     }
   };
 
-  // Load admin data
-  const loadAdminData = async () => {
+  // Load DO data for specific area
+  const loadDOData = async (area) => {
+    try {
+      // Load GMs in DO's area only
+      const { data: areaUsers, error: usersError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('area', area)
+        .order('created_at', { ascending: false });
+
+      if (!usersError) {
+        setAllUsers(areaUsers || []);
+      }
+
+      // Load task completions for area GMs only
+      const areaUserIds = areaUsers?.map(u => u.id) || [];
+      if (areaUserIds.length > 0) {
+        const { data: completions, error: completionsError } = await supabase
+          .from('task_completions')
+          .select(`
+            *,
+            profiles!inner(gm_name, area, restaurant_name)
+          `)
+          .in('user_id', areaUserIds)
+          .order('completion_date', { ascending: false });
+
+        if (!completionsError) {
+          setAllCompletions(completions || []);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading DO data:', error);
+    }
+  };
     try {
       // Load all users for admin dashboard
       const { data: users, error: usersError } = await supabase
@@ -569,6 +608,7 @@ const ChiliHeadTracker = () => {
                   >
                     <option value="gm">General Manager</option>
                     <option value="gm(p)">GM/Managing Partner</option>
+                    <option value="do">Director of Operations</option>
                   </select>
                 </div>
 
@@ -783,8 +823,102 @@ const ChiliHeadTracker = () => {
     );
   }
 
-  // Home Screen
-  if (currentView === 'home') {
+  // DO Dashboard
+  if (currentView === 'do' && isDO) {
+    const todayCompletions = allCompletions.filter(c => c.completion_date === new Date().toISOString().split('T')[0]);
+    const dailyCompletions = todayCompletions.filter(c => c.frequency === 'daily');
+    
+    return (
+      <div className="min-h-screen" style={{ backgroundColor: colors.chiliCream }}>
+        {/* Header */}
+        <div className="bg-white shadow-sm p-4 flex items-center justify-between">
+          <div className="flex items-center">
+            <button onClick={() => setCurrentView('home')} className="mr-4">
+              <ChevronLeft size={24} style={{ color: colors.chiliNavy }} />
+            </button>
+            <div>
+              <h1 className="text-xl font-bold" style={{ color: colors.chiliNavy }}>
+                📊 {profile?.area} Director Dashboard
+              </h1>
+              <p className="text-sm" style={{ color: colors.chiliBrown }}>
+                {profile?.area} • {allUsers.length} GMs • Area Overview
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Area Stats */}
+        <div className="m-4">
+          <div className="bg-white rounded-lg p-6 shadow-md">
+            <h2 className="text-lg font-bold mb-4" style={{ color: colors.chiliNavy }}>
+              📈 {profile?.area} Performance Overview
+            </h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+              <div className="text-center">
+                <p className="text-2xl font-bold" style={{ color: colors.chiliGreen }}>{allUsers.length}</p>
+                <p className="text-sm" style={{ color: colors.chiliBrown }}>Total GMs</p>
+              </div>
+              <div className="text-center">
+                <p className="text-2xl font-bold" style={{ color: colors.chiliYellow }}>
+                  {allUsers.filter(u => u.role === 'gm(p)').length}
+                </p>
+                <p className="text-sm" style={{ color: colors.chiliBrown }}>GM/Partners</p>
+              </div>
+              <div className="text-center">
+                <p className="text-2xl font-bold" style={{ color: colors.chiliRed }}>
+                  {dailyCompletions.length}
+                </p>
+                <p className="text-sm" style={{ color: colors.chiliBrown }}>Active Today</p>
+              </div>
+              <div className="text-center">
+                <p className="text-2xl font-bold" style={{ color: colors.chiliNavy }}>
+                  {Math.round(dailyCompletions.filter(c => c.completed).length / Math.max(dailyCompletions.length, 1) * 100)}%
+                </p>
+                <p className="text-sm" style={{ color: colors.chiliBrown }}>Area Average</p>
+              </div>
+            </div>
+
+            {/* GM Performance List */}
+            <div className="space-y-3">
+              <h3 className="font-bold text-lg" style={{ color: colors.chiliNavy }}>
+                GM Performance - {profile?.area}
+              </h3>
+              {allUsers.map(gmUser => {
+                const gmDailyCompletion = dailyCompletions.filter(c => c.user_id === gmUser.id);
+                const completionRate = gmDailyCompletion.length > 0 ? 
+                  Math.round((gmDailyCompletion.filter(c => c.completed).length / taskData.daily.length) * 100) : 0;
+                
+                return (
+                  <div key={gmUser.id} className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+                    <div>
+                      <h3 className="font-medium" style={{ color: colors.chiliNavy }}>
+                        {gmUser.gm_name}
+                        {gmUser.role === 'do' && ' 📊'}
+                        {gmUser.role === 'gm(p)' && ' ⭐'}
+                      </h3>
+                      <p className="text-sm" style={{ color: colors.chiliBrown }}>
+                        {gmUser.restaurant_name} • {gmUser.role.toUpperCase()}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-lg font-bold" style={{ 
+                        color: completionRate >= 80 ? colors.chiliGreen : 
+                              completionRate >= 60 ? colors.chiliYellow : colors.chiliRed 
+                      }}>
+                        {completionRate}%
+                      </p>
+                      <p className="text-sm" style={{ color: colors.chiliBrown }}>Today</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
     const dailyStats = getCompletionStats('daily');
     const activeDelegationsCount = getActiveDelegations().length;
     const fiscalInfo = getFiscalInfo();
@@ -798,10 +932,12 @@ const ChiliHeadTracker = () => {
               <h1 className="text-2xl font-bold mb-1">
                 🌶️ My ChiliHead Commitment Tracker
                 {isAdmin && ' 🛡️'}
+                {isDO && ' 📊'}
               </h1>
               <p className="text-yellow-100">
                 Welcome back, {profile?.gm_name || 'GM'}!
                 {isAdmin && ' (Master Admin)'}
+                {isDO && ` (${profile?.area} Director)`}
               </p>
             </div>
             <button
@@ -889,6 +1025,26 @@ const ChiliHeadTracker = () => {
               </div>
             </div>
           </button>
+
+          {/* DO Panel Access */}
+          {isDO && (
+            <button
+              onClick={() => setCurrentView('do')}
+              className="w-full bg-white rounded-lg p-6 text-left shadow-md hover:shadow-lg transition-shadow border-2"
+              style={{ borderColor: colors.chiliGreen }}
+            >
+              <div className="flex items-center">
+                <BarChart3 size={32} style={{ color: colors.chiliGreen }} className="mr-4" />
+                <div>
+                  <h3 className="text-xl font-bold" style={{ color: colors.chiliNavy }}>Director Dashboard 📊</h3>
+                  <p style={{ color: colors.chiliBrown }}>{profile?.area} Performance • View Area GMs • Team Reports</p>
+                  <p className="text-sm font-medium" style={{ color: colors.chiliGreen }}>
+                    {allUsers.length} GMs in your area
+                  </p>
+                </div>
+              </div>
+            </button>
+          )}
 
           {/* Admin Panel Access */}
           {isAdmin && (
@@ -1657,7 +1813,7 @@ ${delegations.map(d => `• ${d.task_description} (Assigned to: ${d.assigned_to}
                 setDelegationForm(prev => ({ ...prev, status: 'active' }));
                 createDelegation();
               }}
-              disabled={!delegationForm.dueDate || completedSteps === 0}
+              disabled={!delegationForm.dueDate}
               className="flex-1 py-3 px-4 rounded-md text-white font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ backgroundColor: colors.chiliRed }}
             >
@@ -1674,8 +1830,8 @@ ${delegations.map(d => `• ${d.task_description} (Assigned to: ${d.assigned_to}
                   Activation Requirements
                 </h3>
                 <p className="text-sm" style={{ color: colors.chiliBrown }}>
-                  To activate a delegation, you need: (1) At least 1 ChiliHead step completed, and (2) A due date set.
-                  You can save as draft anytime to continue working on it later.
+                  To activate a delegation, you need a due date set. You can complete ChiliHead steps before or after activation.
+                  Save as draft anytime to continue working on it later.
                 </p>
               </div>
             </div>
