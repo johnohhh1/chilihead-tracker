@@ -159,17 +159,64 @@ const michiganAreas = [
   'Other Area'
 ];
 
+// User Database
+const users = {
+  'John.olenski@gmail.com': {
+    id: 'john-gm',
+    email: 'John.olenski@gmail.com',
+    password: 'ChilisGm2024!',
+    profile: {
+      gm_name: 'John Olenski',
+      area: 'Woods Area',
+      restaurant_name: 'Auburn Hills',
+      role: 'General Manager'
+    }
+  },
+  'Johnolenski@gmail.com': {
+    id: 'john-admin',
+    email: 'Johnolenski@gmail.com',
+    password: 'ChilisAdmin2024!',
+    profile: {
+      gm_name: 'John Olenski',
+      area: 'Michigan State',
+      restaurant_name: 'State Operations',
+      role: 'Administrator'
+    }
+  },
+  'allen.woods@chilis.com': {
+    id: 'allen-woods',
+    email: 'allen.woods@chilis.com', 
+    password: 'ChilisDo2025!',
+    profile: {
+      gm_name: 'Allen Woods',
+      area: 'Woods Area',
+      restaurant_name: 'Woods Area Operations',
+      role: 'Director of Operations'
+    }
+  }
+};
+
 const ChiliHeadTracker = () => {
-  // Demo mode - simulate logged in user
-  const [user] = useState({ id: 'demo-user', email: 'demo@chilis.com' });
-  const [profile] = useState({ 
-    gm_name: 'Demo GM', 
-    area: 'Woods Area', 
-    restaurant_name: 'Chili\'s #1234' 
-  });
+  // User management
+  const [user, setUser] = useState(null);
+  const [profile, setProfile] = useState(null);
   
   // App state - ALL HOOKS MUST BE DECLARED FIRST
-  const [isLoggedIn, setIsLoggedIn] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [loginForm, setLoginForm] = useState({
+    email: '',
+    password: ''
+  });
+  const [showSignup, setShowSignup] = useState(false);
+  const [signupForm, setSignupForm] = useState({
+    email: '',
+    password: '',
+    confirmPassword: '',
+    name: '',
+    area: '',
+    restaurant: '',
+    role: 'General Manager'
+  });
   const [currentView, setCurrentView] = useState('home');
   const [selectedFrequency, setSelectedFrequency] = useState('daily');
   const [language, setLanguage] = useState('en');
@@ -328,46 +375,230 @@ const ChiliHeadTracker = () => {
             <p className="text-sm" style={{ color: colors.chiliBrown }}>
               Excellence Through Leadership & Accountability
             </p>
+            <p className="text-sm mt-2 font-medium" style={{ color: colors.chiliRed }}>
+              {showSignup ? 'Create New Account' : 'Sign In'}
+            </p>
           </div>
           
           <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-2" style={{ color: colors.chiliNavy }}>
-                Email
-              </label>
-              <input
-                type="email"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2"
-                style={{ '--tw-ring-color': colors.chiliRed }}
-                placeholder="demo@chilis.com"
-                defaultValue="demo@chilis.com"
-              />
+            {!showSignup ? (
+              // Login Form
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2" style={{ color: colors.chiliNavy }}>
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2"
+                    style={{ '--tw-ring-color': colors.chiliRed }}
+                    placeholder="Enter your email"
+                    value={loginForm.email}
+                    onChange={(e) => setLoginForm(prev => ({ ...prev, email: e.target.value }))}
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium mb-2" style={{ color: colors.chiliNavy }}>
+                    Password
+                  </label>
+                  <input
+                    type="password"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2"
+                    style={{ '--tw-ring-color': colors.chiliRed }}
+                    placeholder="Enter your password"
+                    value={loginForm.password}
+                    onChange={(e) => setLoginForm(prev => ({ ...prev, password: e.target.value }))}
+                  />
+                </div>
+                
+                <button
+                  onClick={() => {
+                    const userData = users[loginForm.email];
+                    if (userData && userData.password === loginForm.password) {
+                      setUser(userData);
+                      setProfile(userData.profile);
+                      setIsLoggedIn(true);
+                      alert(`🌶️ Welcome ${userData.profile.gm_name}!`);
+                    } else {
+                      alert('❌ Invalid email or password. Please try again.');
+                    }
+                  }}
+                  className="w-full py-2 px-4 rounded-md text-white font-medium hover:opacity-90 transition-opacity"
+                  style={{ backgroundColor: colors.chiliRed }}
+                >
+                  Login
+                </button>
+              </div>
+            ) : (
+              // Signup Form
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2" style={{ color: colors.chiliNavy }}>
+                      Full Name
+                    </label>
+                    <input
+                      type="text"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2"
+                      style={{ '--tw-ring-color': colors.chiliRed }}
+                      placeholder="John Doe"
+                      value={signupForm.name}
+                      onChange={(e) => setSignupForm(prev => ({ ...prev, name: e.target.value }))}
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium mb-2" style={{ color: colors.chiliNavy }}>
+                      Email
+                    </label>
+                    <input
+                      type="email"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2"
+                      style={{ '--tw-ring-color': colors.chiliRed }}
+                      placeholder="john.doe@chilis.com"
+                      value={signupForm.email}
+                      onChange={(e) => setSignupForm(prev => ({ ...prev, email: e.target.value }))}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2" style={{ color: colors.chiliNavy }}>
+                      Area
+                    </label>
+                    <select
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2"
+                      style={{ '--tw-ring-color': colors.chiliRed }}
+                      value={signupForm.area}
+                      onChange={(e) => setSignupForm(prev => ({ ...prev, area: e.target.value }))}
+                    >
+                      <option value="">Select Area</option>
+                      <option value="Woods Area">Woods Area</option>
+                      <option value="Peters Area">Peters Area</option>
+                      <option value="Ruddock Area">Ruddock Area</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium mb-2" style={{ color: colors.chiliNavy }}>
+                      Role
+                    </label>
+                    <select
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2"
+                      style={{ '--tw-ring-color': colors.chiliRed }}
+                      value={signupForm.role}
+                      onChange={(e) => setSignupForm(prev => ({ ...prev, role: e.target.value }))}
+                    >
+                      <option value="General Manager">General Manager</option>
+                      <option value="Managing Partner">Managing Partner</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2" style={{ color: colors.chiliNavy }}>
+                    Restaurant Name
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2"
+                    style={{ '--tw-ring-color': colors.chiliRed }}
+                    placeholder="Restaurant/Location Name"
+                    value={signupForm.restaurant}
+                    onChange={(e) => setSignupForm(prev => ({ ...prev, restaurant: e.target.value }))}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2" style={{ color: colors.chiliNavy }}>
+                      Password
+                    </label>
+                    <input
+                      type="password"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2"
+                      style={{ '--tw-ring-color': colors.chiliRed }}
+                      placeholder="Create password"
+                      value={signupForm.password}
+                      onChange={(e) => setSignupForm(prev => ({ ...prev, password: e.target.value }))}
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium mb-2" style={{ color: colors.chiliNavy }}>
+                      Confirm Password
+                    </label>
+                    <input
+                      type="password"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2"
+                      style={{ '--tw-ring-color': colors.chiliRed }}
+                      placeholder="Confirm password"
+                      value={signupForm.confirmPassword}
+                      onChange={(e) => setSignupForm(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                    />
+                  </div>
+                </div>
+                
+                <button
+                  onClick={() => {
+                    if (!signupForm.name || !signupForm.email || !signupForm.area || !signupForm.restaurant || !signupForm.password) {
+                      alert('❌ Please fill in all fields');
+                      return;
+                    }
+                    if (signupForm.password !== signupForm.confirmPassword) {
+                      alert('❌ Passwords do not match');
+                      return;
+                    }
+                    if (users[signupForm.email]) {
+                      alert('❌ Email already exists');
+                      return;
+                    }
+                    
+                    // Create new user (in production this would go to Supabase)
+                    const newUser = {
+                      id: Date.now().toString(),
+                      email: signupForm.email,
+                      password: signupForm.password,
+                      profile: {
+                        gm_name: signupForm.name,
+                        area: signupForm.area,
+                        restaurant_name: signupForm.restaurant,
+                        role: signupForm.role
+                      }
+                    };
+                    
+                    users[signupForm.email] = newUser;
+                    alert('🌶️ Account created successfully! You can now login.');
+                    setShowSignup(false);
+                    setSignupForm({
+                      email: '',
+                      password: '',
+                      confirmPassword: '',
+                      name: '',
+                      area: '',
+                      restaurant: '',
+                      role: 'General Manager'
+                    });
+                  }}
+                  className="w-full py-2 px-4 rounded-md text-white font-medium hover:opacity-90 transition-opacity"
+                  style={{ backgroundColor: colors.chiliGreen }}
+                >
+                  Create Account
+                </button>
+              </div>
+            )}
+            
+            <div className="text-center">
+              <button
+                onClick={() => setShowSignup(!showSignup)}
+                className="text-xs underline hover:opacity-70"
+                style={{ color: colors.chiliNavy }}
+              >
+                {showSignup ? 'Back to Login' : 'Need an account? Sign Up'}
+              </button>
             </div>
-            
-            <div>
-              <label className="block text-sm font-medium mb-2" style={{ color: colors.chiliNavy }}>
-                Password
-              </label>
-              <input
-                type="password"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2"
-                style={{ '--tw-ring-color': colors.chiliRed }}
-                placeholder="••••••••"
-                defaultValue="demo123"
-              />
-            </div>
-            
-            <button
-              onClick={() => setIsLoggedIn(true)}
-              className="w-full py-2 px-4 rounded-md text-white font-medium hover:opacity-90 transition-opacity"
-              style={{ backgroundColor: colors.chiliRed }}
-            >
-              Login
-            </button>
-            
-            <p className="text-xs text-center" style={{ color: colors.chiliBrown }}>
-              Demo Mode: Click login to access the tracker
-            </p>
           </div>
         </div>
       </div>
@@ -412,12 +643,17 @@ const ChiliHeadTracker = () => {
             <div>
               <h1 className="text-2xl font-bold mb-1">🌶️ My ChiliHead Commitment Tracker</h1>
               <p className="text-yellow-100">Welcome back, {profile?.gm_name || 'GM'}!</p>
+              <p className="text-yellow-200 text-sm">{profile?.role} • {profile?.area}</p>
             </div>
             <button 
               onClick={() => {
                 if (window.confirm('Are you sure you want to logout?')) {
-                  alert('👋 Logout successful! Redirecting to login...');
+                  alert(`👋 Goodbye ${profile?.gm_name || 'User'}! Logging out...`);
+                  setUser(null);
+                  setProfile(null);
                   setIsLoggedIn(false);
+                  setLoginForm({ email: '', password: '' });
+                  setCurrentView('home');
                 }
               }}
               className="bg-white bg-opacity-20 px-4 py-2 rounded-md text-sm font-medium hover:bg-opacity-30 transition-all cursor-pointer"
