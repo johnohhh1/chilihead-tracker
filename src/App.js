@@ -1,21 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, Settings, Users, BarChart3, CheckSquare, Calendar, Clock, AlertTriangle, TrendingUp } from 'lucide-react';
+import { createClient } from '@supabase/supabase-js';
 
-// Mock Supabase for demonstration - replace with actual Supabase client
-const mockSupabase = {
-  auth: {
-    getSession: () => Promise.resolve({ data: { session: null } }),
-    onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
-    signUp: (data) => Promise.resolve({ data, error: null }),
-    signInWithPassword: (data) => Promise.resolve({ data, error: null }),
-    signOut: () => Promise.resolve({ error: null })
-  },
-  from: (table) => ({
-    select: () => ({ eq: () => ({ single: () => Promise.resolve({ data: null, error: null }) }) }),
-    insert: () => ({ select: () => ({ single: () => Promise.resolve({ data: {}, error: null }) }) }),
-    upsert: () => Promise.resolve({ error: null })
-  })
-};
+// Real Supabase client - PRODUCTION
+const supabaseUrl = 'https://fhzbzzlgryvnlnewjcev.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoemJ6emxncnl2bmxuZXdqY2V2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM1NDIwNDEsImV4cCI6MjA2OTExODA0MX0.bGxcW7aXddZ2SPfJd9_YqhhRpEnkIn0BKum3kO5SAog';
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Official Chili's Brand Colors
 const colors = {
