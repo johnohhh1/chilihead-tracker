@@ -168,7 +168,8 @@ const ChiliHeadTracker = () => {
     restaurant_name: 'Chili\'s #1234' 
   });
   
-  // App state
+  // App state - ALL HOOKS MUST BE DECLARED FIRST
+  const [isLoggedIn, setIsLoggedIn] = useState(true);
   const [currentView, setCurrentView] = useState('home');
   const [selectedFrequency, setSelectedFrequency] = useState('daily');
   const [language, setLanguage] = useState('en');
@@ -315,6 +316,64 @@ const ChiliHeadTracker = () => {
     alert('🌶️ Delegation updated successfully!');
   };
 
+  // Login Screen - must be after all hooks are declared
+  if (!isLoggedIn) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: colors.chiliCream }}>
+        <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-md">
+          <div className="text-center mb-6">
+            <h1 className="text-2xl font-bold mb-2" style={{ color: colors.chiliNavy }}>
+              🌶️ ChiliHead Commitment Tracker
+            </h1>
+            <p className="text-sm" style={{ color: colors.chiliBrown }}>
+              Excellence Through Leadership & Accountability
+            </p>
+          </div>
+          
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-2" style={{ color: colors.chiliNavy }}>
+                Email
+              </label>
+              <input
+                type="email"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2"
+                style={{ '--tw-ring-color': colors.chiliRed }}
+                placeholder="demo@chilis.com"
+                defaultValue="demo@chilis.com"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium mb-2" style={{ color: colors.chiliNavy }}>
+                Password
+              </label>
+              <input
+                type="password"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2"
+                style={{ '--tw-ring-color': colors.chiliRed }}
+                placeholder="••••••••"
+                defaultValue="demo123"
+              />
+            </div>
+            
+            <button
+              onClick={() => setIsLoggedIn(true)}
+              className="w-full py-2 px-4 rounded-md text-white font-medium hover:opacity-90 transition-opacity"
+              style={{ backgroundColor: colors.chiliRed }}
+            >
+              Login
+            </button>
+            
+            <p className="text-xs text-center" style={{ color: colors.chiliBrown }}>
+              Demo Mode: Click login to access the tracker
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // Utility functions
   const getCompletionStats = (frequency) => {
     const today = new Date().toISOString().split('T')[0];
@@ -354,7 +413,15 @@ const ChiliHeadTracker = () => {
               <h1 className="text-2xl font-bold mb-1">🌶️ My ChiliHead Commitment Tracker</h1>
               <p className="text-yellow-100">Welcome back, {profile?.gm_name || 'GM'}!</p>
             </div>
-            <button className="bg-white bg-opacity-20 px-4 py-2 rounded-md text-sm font-medium hover:bg-opacity-30 transition-all">
+            <button 
+              onClick={() => {
+                if (window.confirm('Are you sure you want to logout?')) {
+                  alert('👋 Logout successful! Redirecting to login...');
+                  setIsLoggedIn(false);
+                }
+              }}
+              className="bg-white bg-opacity-20 px-4 py-2 rounded-md text-sm font-medium hover:bg-opacity-30 transition-all cursor-pointer"
+            >
               Logout
             </button>
           </div>
