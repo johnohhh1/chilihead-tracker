@@ -159,41 +159,50 @@ const michiganAreas = [
   'Other Area'
 ];
 
-// User Database
-const users = {
-  'John.olenski@gmail.com': {
-    id: 'john-gm',
-    email: 'John.olenski@gmail.com',
-    password: 'ChilisGm2024!',
-    profile: {
-      gm_name: 'John Olenski',
-      area: 'Woods Area',
-      restaurant_name: 'Auburn Hills',
-      role: 'General Manager'
-    }
-  },
-  'Johnolenski@gmail.com': {
-    id: 'john-admin',
-    email: 'Johnolenski@gmail.com',
-    password: 'ChilisAdmin2024!',
-    profile: {
-      gm_name: 'John Olenski',
-      area: 'Michigan State',
-      restaurant_name: 'State Operations',
-      role: 'Administrator'
-    }
-  },
-  'allen.woods@chilis.com': {
-    id: 'allen-woods',
-    email: 'allen.woods@chilis.com', 
-    password: 'ChilisDo2025!',
-    profile: {
-      gm_name: 'Allen Woods',
-      area: 'Woods Area',
-      restaurant_name: 'Woods Area Operations',
-      role: 'Director of Operations'
+// Real authentication functions
+const signInUser = async (email, password) => {
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password
+  });
+  return { data, error };
+};
+
+const signUpUser = async (email, password, profile) => {
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password
+  });
+  
+  if (data.user && !error) {
+    // Create profile in profiles table
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .insert({
+        id: data.user.id,
+        email: data.user.email,
+        gm_name: profile.name,
+        area: profile.area,
+        restaurant_name: profile.restaurant,
+        role: profile.role
+      });
+    
+    if (profileError) {
+      console.error('Profile creation error:', profileError);
     }
   }
+  
+  return { data, error };
+};
+
+const getProfile = async (userId) => {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', userId)
+    .single();
+  
+  return { data, error };
 };
 
 const ChiliHeadTracker = () => {
@@ -203,6 +212,44 @@ const ChiliHeadTracker = () => {
   
   // App state - ALL HOOKS MUST BE DECLARED FIRST
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  
+  // Check for existing session on load
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      
+      if (session && session.user) {
+        const { data: profileData, error: profileError } = await getProfile(session.user.id);
+        
+        if (!profileError && profileData) {
+          setUser(session.user);
+          setProfile(profileData);
+          setIsLoggedIn(true);
+        }
+      }
+    };
+    
+    checkSession();
+    
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session && session.user) {
+        const { data: profileData, error: profileError } = await getProfile(session.user.id);
+        
+        if (!profileError && profileData) {
+          setUser(session.user);
+          setProfile(profileData);
+          setIsLoggedIn(true);
+        }
+      } else {
+        setUser(null);
+        setProfile(null);
+        setIsLoggedIn(false);
+      }
+    });
+    
+    return () => subscription.unsubscribe();
+  }, []);
   const [loginForm, setLoginForm] = useState({
     email: '',
     password: ''
@@ -413,15 +460,27 @@ const ChiliHeadTracker = () => {
                 </div>
                 
                 <button
-                  onClick={() => {
-                    const userData = users[loginForm.email];
-                    if (userData && userData.password === loginForm.password) {
-                      setUser(userData);
-                      setProfile(userData.profile);
+                  onClick={async () => {
+                    const { data, error } = await signInUser(loginForm.email, loginForm.password);
+                    
+                    if (error) {
+                      alert(`❌ Login failed: ${error.message}`);
+                      return;
+                    }
+                    
+                    if (data.user) {
+                      // Get profile from Supabase
+                      const { data: profileData, error: profileError } = await getProfile(data.user.id);
+                      
+                      if (profileError) {
+                        alert('❌ Could not load profile data.');
+                        return;
+                      }
+                      
+                      setUser(data.user);
+                      setProfile(profileData);
                       setIsLoggedIn(true);
-                      alert(`🌶️ Welcome ${userData.profile.gm_name}!`);
-                    } else {
-                      alert('❌ Invalid email or password. Please try again.');
+                      alert(`🌶️ Welcome ${profileData.gm_name}!`);
                     }
                   }}
                   className="w-full py-2 px-4 rounded-md text-white font-medium hover:opacity-90 transition-opacity"
@@ -542,7 +601,7 @@ const ChiliHeadTracker = () => {
                 </div>
                 
                 <button
-                  onClick={() => {
+                  onClick={async () => {
                     if (!signupForm.name || !signupForm.email || !signupForm.area || !signupForm.restaurant || !signupForm.password) {
                       alert('❌ Please fill in all fields');
                       return;
@@ -551,26 +610,21 @@ const ChiliHeadTracker = () => {
                       alert('❌ Passwords do not match');
                       return;
                     }
-                    if (users[signupForm.email]) {
-                      alert('❌ Email already exists');
+                    
+                    // Create user in real Supabase
+                    const { data, error } = await signUpUser(signupForm.email, signupForm.password, {
+                      name: signupForm.name,
+                      area: signupForm.area,
+                      restaurant: signupForm.restaurant,
+                      role: signupForm.role
+                    });
+                    
+                    if (error) {
+                      alert(`❌ Signup failed: ${error.message}`);
                       return;
                     }
                     
-                    // Create new user (in production this would go to Supabase)
-                    const newUser = {
-                      id: Date.now().toString(),
-                      email: signupForm.email,
-                      password: signupForm.password,
-                      profile: {
-                        gm_name: signupForm.name,
-                        area: signupForm.area,
-                        restaurant_name: signupForm.restaurant,
-                        role: signupForm.role
-                      }
-                    };
-                    
-                    users[signupForm.email] = newUser;
-                    alert('🌶️ Account created successfully! You can now login.');
+                    alert('🌶️ Account created successfully! Check your email to confirm, then you can login.');
                     setShowSignup(false);
                     setSignupForm({
                       email: '',
@@ -646,9 +700,10 @@ const ChiliHeadTracker = () => {
               <p className="text-yellow-200 text-sm">{profile?.role} • {profile?.area}</p>
             </div>
             <button 
-              onClick={() => {
+              onClick={async () => {
                 if (window.confirm('Are you sure you want to logout?')) {
                   alert(`👋 Goodbye ${profile?.gm_name || 'User'}! Logging out...`);
+                  await supabase.auth.signOut();
                   setUser(null);
                   setProfile(null);
                   setIsLoggedIn(false);
