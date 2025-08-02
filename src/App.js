@@ -158,29 +158,31 @@ const signInUser = async (email, password) => {
   return { data, error };
 };
 
+// Role mapping to match database schema
+const mapRoleToDb = (role) => {
+  const roleMap = {
+    'General Manager': 'gm',
+    'Managing Partner': 'managing_partner', 
+    'Director of Operations': 'director',
+    'Administrator': 'admin'
+  };
+  return roleMap[role] || 'gm';
+};
+
 const signUpUser = async (email, password, profile) => {
+  // Use proper user metadata for trigger to handle profile creation
   const { data, error } = await supabase.auth.signUp({
     email,
-    password
-  });
-  
-  if (data.user && !error) {
-    // Create profile in profiles table
-    const { error: profileError } = await supabase
-      .from('profiles')
-      .insert({
-        id: data.user.id,
-        email: data.user.email,
+    password,
+    options: {
+      data: {
         gm_name: profile.name,
+        role: mapRoleToDb(profile.role),
         area: profile.area,
-        restaurant_name: profile.restaurant,
-        role: profile.role
-      });
-    
-    if (profileError) {
-      console.error('Profile creation error:', profileError);
+        restaurant_name: profile.restaurant
+      }
     }
-  }
+  });
   
   return { data, error };
 };
@@ -540,8 +542,9 @@ const ChiliHeadTracker = () => {
                       value={signupForm.role}
                       onChange={(e) => setSignupForm(prev => ({ ...prev, role: e.target.value }))}
                     >
-                      <option value="General Manager">General Manager</option>
-                      <option value="Managing Partner">Managing Partner</option>
+                                                 <option value="General Manager">General Manager</option>
+                           <option value="Managing Partner">Managing Partner</option>
+                           <option value="Director of Operations">Director of Operations</option>
                     </select>
                   </div>
                 </div>
