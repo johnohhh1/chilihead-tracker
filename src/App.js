@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, Settings, Users, BarChart3, CheckSquare, Calendar, Clock, AlertTriangle, TrendingUp } from 'lucide-react';
+import { ChevronLeft, Settings, Users, BarChart3, CheckSquare, Calendar, Clock, AlertTriangle, TrendingUp, Edit3, Plus, Trash2, Eye, Shield } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-// Real Supabase client - PRODUCTION
-const supabaseUrl = 'https://fhzbzzlgryvnlnewjcev.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoemJ6emxncnl2bmxuZXdqY2V2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM1NDIwNDEsImV4cCI6MjA2OTExODA0MX0.bGxcW7aXddZ2SPfJd9_YqhhRpEnkIn0BKum3kO5SAog';
+// Initialize Supabase client  
+const supabaseUrl = process.env.REACT_APP_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://fhzbzzlgryvnlnewjcev.supabase.co';
+const supabaseKey = process.env.REACT_APP_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoemJ6emxncnl2bmxuZXdqY2V2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM1NDIwNDEsImV4cCI6MjA2OTExODA0MX0.bGxcW7aXddZ2SPfJd9_YqhhRpEnkIn0BKum3kO5SAog';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Official Chili's Brand Colors
@@ -22,13 +22,13 @@ const colors = {
   chiliGray: 'rgb(161, 159, 154)'
 };
 
-// ChiliHead 5-Pillar Colors
+// ChiliHead 5-Pillar Colors - CORRECT GRADIENT FLOW
 const chiliheadColors = {
-  senseOfBelonging: colors.chiliYellow,
-  clearDirection: colors.chiliYellowAlt,
-  preparation: colors.chiliRed,
-  support: colors.chiliRedAlt,
-  accountability: colors.chiliNavy
+  senseOfBelonging: 'rgb(255, 235, 59)',    // Bright Yellow
+  clearDirection: 'rgb(255, 152, 0)',       // Orange  
+  preparation: 'rgb(255, 87, 34)',          // Darker Orange/Red-Orange
+  support: 'rgb(244, 67, 54)',              // Red
+  accountability: 'rgb(63, 81, 181)'        // Blue
 };
 
 // ChiliHead 5-Pillar Labels
@@ -93,7 +93,7 @@ const getRelativeDate = (daysFromToday) => {
   return date.toISOString().split('T')[0];
 };
 
-// Task Data
+// Task Data - YOUR CUSTOMIZED LISTS
 const taskData = {
   daily: [
     'Walk the line during busy periods',
@@ -101,20 +101,25 @@ const taskData = {
     'Check labor vs sales targets',
     'Review guest satisfaction scores',
     'Inspect food quality and presentation',
-    'Check cleanliness standards',
+    'Check cleanliness SAFE standards',
     'Review safety compliance',
     'Monitor team member performance',
     'Update daily communication log',
-    'Review inventory levels',
+    'Write an Chilihead Recognition each day',
+    'Review Prep levels',
     'Plan next day\'s priorities'
   ],
   weekly: [
     'Complete weekly P&L review',
+    'Review and update Forecast in Hotschedules',
+    'Post TM Schedule Monday',
+    'Make sure Next weeks Schedule is started and on track by Monday PM',
+    'Update Guest Count in Forecast for Menulink',
     'Conduct team member coaching sessions',
     'Review and update schedules',
     'Complete food safety audit',
     'Analyze sales trends and patterns',
-    'Review customer feedback and complaints',
+    'Review Guest feedback and complaints',
     'Conduct inventory management review',
     'Update training plans and progress',
     'Review maintenance and repairs needed',
@@ -124,10 +129,14 @@ const taskData = {
     'Review compliance requirements',
     'Update operational procedures'
   ],
+  biweekly: [
+    'Complete comprehensive operational review'
+  ],
   monthly: [
     'Complete monthly business review',
-    'Conduct formal performance reviews',
-    'Review and update SOPs',
+    'Prepare and send your D.O. their powerpoint recap',
+    'Conduct Monthly Check-ins',
+    'Review and update AORs',
     'Complete comprehensive audit',
     'Analyze monthly financial performance',
     'Plan team member development',
@@ -136,17 +145,22 @@ const taskData = {
     'Complete regulatory compliance review',
     'Plan next month\'s goals',
     'Submit monthly reports'
+  ],
+  quarterly: [
+    'Complete quarterly business planning',
+    'Conduct comprehensive team reviews',
+    'Review and update all policies',
+    'Plan quarterly training initiatives',
+    'Complete competitive analysis',
+    'Set next quarter\'s objectives'
   ]
 };
 
-// Michigan DMA Areas
+// Michigan DMA Areas - YOUR AREAS
 const michiganAreas = [
   'Woods Area',
   'Peters Area',
-  'Troy Area',
-  'Southfield Area',
-  'Dearborn Area',
-  'Other Area'
+  'Ruddock Area'
 ];
 
 // Real authentication functions
