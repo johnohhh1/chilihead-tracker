@@ -93,66 +93,60 @@ const getRelativeDate = (daysFromToday) => {
   return date.toISOString().split('T')[0];
 };
 
-// Task Data - YOUR CUSTOMIZED LISTS
+// Task Data - YOUR ACTUAL OPERATIONAL TASKS
 const taskData = {
   daily: [
-    'Walk the line during busy periods',
-    'Review yesterday\'s sales vs goal',
-    'Check labor vs sales targets',
-    'Review guest satisfaction scores',
-    'Inspect food quality and presentation',
-    'Check cleanliness SAFE standards',
-    'Review safety compliance',
-    'Monitor team member performance',
-    'Update daily communication log',
-    'Write an Chilihead Recognition each day',
-    'Review Prep levels',
-    'Plan next day\'s priorities'
+    "Validate systems",
+    "Validate initiatives", 
+    "Validate KPI's",
+    "Validate Ops Systems",
+    "Oracle daily check",
+    "Guest Metrics - send out results to Team every morning, personally talk to Leaders",
+    "Corrigo follow up (Min 2x a week)",
+    "Validate Proper Shift hand off",
+    "Follow up on Krow",
+    "COG review and adjustments",
+    "Give ATLs each shift & leave encouraging notes in HS to create a sense of belonging"
   ],
   weekly: [
-    'Complete weekly P&L review',
-    'Review and update Forecast in Hotschedules',
-    'Post TM Schedule Monday',
-    'Make sure Next weeks Schedule is started and on track by Monday PM',
-    'Update Guest Count in Forecast for Menulink',
-    'Conduct team member coaching sessions',
-    'Review and update schedules',
-    'Complete food safety audit',
-    'Analyze sales trends and patterns',
-    'Review Guest feedback and complaints',
-    'Conduct inventory management review',
-    'Update training plans and progress',
-    'Review maintenance and repairs needed',
-    'Evaluate promotional effectiveness',
-    'Plan next week\'s focus areas',
-    'Complete weekly team meeting',
-    'Review compliance requirements',
-    'Update operational procedures'
+    "Review AI Forecasting & adjustments", 
+    "Manager and TM 1-1s",
+    "Follow Getting Started Tips and Scheduling Guidelines",
+    "Dedicate time to forecasting; review previous and create an accurate forecast",
+    "Follow up that managers are keeping track of all areas and applicants",
+    "Schedule time to observe To-Go & Virtual Brand behaviors & systems",
+    "Review GSE & zoning (popular documents on BrinkerWeb)",
+    "Schedule side-by-side shift with newest Manager",
+    "Check in with AvT Champion; align & set expectations",
+    "Seek out feedback from other GMs",
+    "Complete SAFE walk and report critical or structural issues in Corrigo",
+    "Review Culture Calendar for the following month and follow up with Hospitality Manager to ensure it's being followed",
+    "Check in with Training Captain: Review Training Completion, Review Training Schedules",
+    "Staffing/Labor inspect"
   ],
   biweekly: [
-    'Complete comprehensive operational review'
+    "Connection lunch with team members"
   ],
   monthly: [
-    'Complete monthly business review',
-    'Prepare and send your D.O. their powerpoint recap',
-    'Conduct Monthly Check-ins',
-    'Review and update AORs',
-    'Complete comprehensive audit',
-    'Analyze monthly financial performance',
-    'Plan team member development',
-    'Review vendor performance',
-    'Update emergency procedures',
-    'Complete regulatory compliance review',
-    'Plan next month\'s goals',
-    'Submit monthly reports'
+    "AO development plans",
+    "Pest CAPS monthly review",
+    "Dedicate time to organize inventory sheets",
+    "Make a supplies order",
+    "Reach out to all vendors and reconcile any outstanding invoices",
+    "Update contact list for vendors & reps",
+    "Assign Safety Champion for Safety Notebook",
+    "Complete GM LINC training modules",
+    "Schedule meeting with Managers who write schedules to review HS reports and align",
+    "Complete Manager Schedule / send to DO",
+    "Review RAP & KPIs: Where are you winning? What are you working on?"
   ],
   quarterly: [
-    'Complete quarterly business planning',
-    'Conduct comprehensive team reviews',
-    'Review and update all policies',
-    'Plan quarterly training initiatives',
-    'Complete competitive analysis',
-    'Set next quarter\'s objectives'
+    "Quarterly 1:1 with leaders",
+    "Schedule quarterly AO 1:1s", 
+    "Manager Meeting – restaurant review sheet, labor triangle, 60 day actions plan, safety, systems & staffing",
+    "Schedule Manager 1-1s to discuss restaurant results, expectations & wellbeing",
+    "Schedule a Manager outing (switch a dinner shift with a neighboring restaurant)",
+    "Validate terminations were processed"
   ]
 };
 
