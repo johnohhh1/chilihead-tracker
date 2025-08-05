@@ -199,13 +199,21 @@ const getProfile = async (userId) => {
 
 const ChiliHeadTracker = () => {
   // User management
-  const [user, setUser] = useState(null);
-  const [profile, setProfile] = useState(null);
+  const [user, setUser] = useState({ id: 'temp-user', email: 'temp@temp.com' });
+  const [profile, setProfile] = useState({ 
+    id: 'temp-user', 
+    email: 'temp@temp.com', 
+    gm_name: 'John Olenski', 
+    role: 'admin', 
+    area: 'Woods Area', 
+    restaurant_name: 'Auburn Hills' 
+  });
   
   // App state - ALL HOOKS MUST BE DECLARED FIRST
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(true); // TEMPORARILY BYPASSED FOR DEVELOPMENT
   
-  // Check for existing session on load
+  // TEMPORARILY DISABLED - Check for existing session on load
+  /*
   useEffect(() => {
     const checkSession = async () => {
       const { data: { session }, error } = await supabase.auth.getSession();
@@ -242,6 +250,7 @@ const ChiliHeadTracker = () => {
     
     return () => subscription.unsubscribe();
   }, []);
+  */
   const [loginForm, setLoginForm] = useState({
     email: '',
     password: ''
